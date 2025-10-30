@@ -91,46 +91,7 @@ class InventoryManager {
         });
     }
 
-    async loadInventory() {
-        const tbody = document.getElementById('inventoryTableBody');
-        if (!tbody) return;
-
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">Loading inventory...</td></tr>';
-
-        try {
-            const { data: items, error } = await supabase
-                .from('inventory')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            
-            // Map Supabase columns to your app's format
-            this.items = (items || []).map(item => ({
-                id: item.id,
-                name: item.item_name,
-                sku: item.sku,
-                quantity: item.quantity,
-                costPrice: item.cost_price,
-                sellingPrice: item.selling_price,
-                description: item.description,
-                minStock: item.min_stock,
-                lastUpdated: item.updated_at || item.created_at,
-                created: item.created_at
-            }));
-
-            this.displayInventory();
-            this.updateDashboard();
-        } catch (error) {
-            console.error('Error loading inventory:', error);
-            // Fallback to local storage
-            this.items = JSON.parse(localStorage.getItem('petrosini_inventory')) || [];
-            this.displayInventory();
-            this.updateDashboard();
-        }
-    }
-
-    displayInventory() {
+    loadInventory() {
         const tbody = document.getElementById('inventoryTableBody');
         if (!tbody) return;
 
@@ -239,7 +200,7 @@ class InventoryManager {
         }
     }
 
-    async saveItem() {
+    saveItem() {
         const id = document.getElementById('itemId').value;
         const name = document.getElementById('itemName').value.trim();
         const sku = document.getElementById('itemSku').value.trim();
@@ -256,49 +217,6 @@ class InventoryManager {
         }
 
         const itemData = {
-            item_name: name,
-            sku: sku,
-            quantity: quantity,
-            cost_price: costPrice,
-            selling_price: sellingPrice,
-            description: description,
-            min_stock: minStock,
-            updated_at: new Date().toISOString()
-        };
-
-        try {
-            if (id) {
-                // Update existing item in Supabase
-                const { error } = await supabase
-                    .from('inventory')
-                    .update(itemData)
-                    .eq('id', id);
-                if (error) throw error;
-                this.showNotification('Item updated successfully!', 'success');
-            } else {
-                // Add new item to Supabase
-                itemData.created_at = new Date().toISOString();
-                const { data, error } = await supabase
-                    .from('inventory')
-                    .insert([itemData])
-                    .select();
-                if (error) throw error;
-                this.showNotification('Item added successfully!', 'success');
-            }
-
-            // Reload from Supabase
-            await this.loadInventory();
-            this.hideForm();
-        } catch (error) {
-            console.error('Error saving item:', error);
-            // Fallback to local storage
-            this.showNotification('Error saving to cloud. Using local storage.', 'error');
-            this.saveToLocalStorageFallback(id, name, sku, quantity, costPrice, sellingPrice, description, minStock);
-        }
-    }
-
-    saveToLocalStorageFallback(id, name, sku, quantity, costPrice, sellingPrice, description, minStock) {
-        const itemData = {
             id: id || this.generateId(),
             name: name,
             sku: sku,
@@ -312,16 +230,21 @@ class InventoryManager {
         };
 
         if (id) {
+            // Update existing item
             const index = this.items.findIndex(item => item.id === id);
             if (index !== -1) {
                 this.items[index] = itemData;
+                this.showNotification('Item updated successfully!', 'success');
             }
         } else {
+            // Add new item
             this.items.push(itemData);
+            this.showNotification('Item added successfully!', 'success');
         }
 
         this.saveToLocalStorage();
-        this.displayInventory();
+        this.loadInventory();
+        this.updateDashboard();
         this.hideForm();
     }
 
@@ -1061,31 +984,19 @@ class InventoryManager {
         this.showNotification(`Customer ${name} added successfully!`, 'success');
     }
 
-    async deleteItem(id) {
+    deleteItem(id) {
         if (confirm('Are you sure you want to delete this item?')) {
-            try {
-                const { error } = await supabase
-                    .from('inventory')
-                    .delete()
-                    .eq('id', id);
-                if (error) throw error;
-                
-                await this.loadInventory();
-                this.showNotification('Item deleted successfully!', 'success');
-            } catch (error) {
-                console.error('Error deleting item:', error);
-                // Fallback to local storage
-                this.items = this.items.filter(item => item.id !== id);
-                this.saveToLocalStorage();
-                this.displayInventory();
-                this.showNotification('Item deleted from local storage!', 'success');
-            }
+            this.items = this.items.filter(item => item.id !== id);
+            this.saveToLocalStorage();
+            this.loadInventory();
+            this.updateDashboard();
+            this.showNotification('Item deleted successfully!', 'success');
         }
     }
 
     filterItems(searchTerm) {
         if (!searchTerm) {
-            this.displayInventory();
+            this.loadInventory();
             return;
         }
 
@@ -1241,89 +1152,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 });
-// ADD this new function (don't replace anything)
-async syncWithSupabase() {
-    try {
-        const { data: items, error } = await supabase
-            .from('inventory')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        
-        // If Supabase has data, use it instead of local storage
-        if (items && items.length > 0) {
-            this.items = items.map(item => ({
-                id: item.id,
-                name: item.item_name,
-                sku: item.sku,
-                quantity: item.quantity,
-                costPrice: item.cost_price,
-                sellingPrice: item.selling_price,
-                description: item.description,
-                minStock: item.min_stock,
-                lastUpdated: item.updated_at || item.created_at,
-                created: item.created_at
-            }));
-            this.saveToLocalStorage(); // Keep local copy
-        }
-        
-        this.loadInventory(); // Use your original function
-        this.updateDashboard();
-    } catch (error) {
-        console.error('Supabase sync error:', error);
-        // Continue with local storage
-        this.loadInventory();
-    }
-}
-
-// ADD this line to your existing init function (find it and add this one line)
-// Look for your existing init() function and add the first line:
-init() {
-    this.syncWithSupabase(); // ADD THIS LINE AT THE TOP
-    this.setupEventListeners();
-    this.updateDashboard();
-    this.setupTabs();
-    
-    // ... rest of your existing init code ...
-}
-
-// ADD this Supabase part to your existing saveItem function
-// Find your saveItem() function and add this at the very end:
-    // ... your existing saveItem code ...
-
-    this.saveToLocalStorage();
-    this.loadInventory();
-    this.updateDashboard();
-    this.hideForm();
-
-    // ADD THIS SUPABASE SYNC PART AT THE END
-    try {
-        const supabaseData = {
-            item_name: name,
-            sku: sku,
-            quantity: quantity,
-            cost_price: costPrice,
-            selling_price: sellingPrice,
-            description: description,
-            min_stock: minStock,
-            updated_at: new Date().toISOString()
-        };
-
-        if (id && id.startsWith('id_')) {
-            // This is a local ID, create new in Supabase
-            supabaseData.created_at = new Date().toISOString();
-            await supabase.from('inventory').insert([supabaseData]);
-        } else if (id) {
-            // This is a Supabase ID, update existing
-            await supabase.from('inventory').update(supabaseData).eq('id', id);
-        } else {
-            // New item, create in Supabase
-            supabaseData.created_at = new Date().toISOString();
-            await supabase.from('inventory').insert([supabaseData]);
-        }
-    } catch (error) {
-        console.error('Supabase sync failed:', error);
-        // Don't show error to user - just log it
-    }
-}
