@@ -1241,3 +1241,89 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 });
+// ADD this new function (don't replace anything)
+async syncWithSupabase() {
+    try {
+        const { data: items, error } = await supabase
+            .from('inventory')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        
+        // If Supabase has data, use it instead of local storage
+        if (items && items.length > 0) {
+            this.items = items.map(item => ({
+                id: item.id,
+                name: item.item_name,
+                sku: item.sku,
+                quantity: item.quantity,
+                costPrice: item.cost_price,
+                sellingPrice: item.selling_price,
+                description: item.description,
+                minStock: item.min_stock,
+                lastUpdated: item.updated_at || item.created_at,
+                created: item.created_at
+            }));
+            this.saveToLocalStorage(); // Keep local copy
+        }
+        
+        this.loadInventory(); // Use your original function
+        this.updateDashboard();
+    } catch (error) {
+        console.error('Supabase sync error:', error);
+        // Continue with local storage
+        this.loadInventory();
+    }
+}
+
+// ADD this line to your existing init function (find it and add this one line)
+// Look for your existing init() function and add the first line:
+init() {
+    this.syncWithSupabase(); // ADD THIS LINE AT THE TOP
+    this.setupEventListeners();
+    this.updateDashboard();
+    this.setupTabs();
+    
+    // ... rest of your existing init code ...
+}
+
+// ADD this Supabase part to your existing saveItem function
+// Find your saveItem() function and add this at the very end:
+    // ... your existing saveItem code ...
+
+    this.saveToLocalStorage();
+    this.loadInventory();
+    this.updateDashboard();
+    this.hideForm();
+
+    // ADD THIS SUPABASE SYNC PART AT THE END
+    try {
+        const supabaseData = {
+            item_name: name,
+            sku: sku,
+            quantity: quantity,
+            cost_price: costPrice,
+            selling_price: sellingPrice,
+            description: description,
+            min_stock: minStock,
+            updated_at: new Date().toISOString()
+        };
+
+        if (id && id.startsWith('id_')) {
+            // This is a local ID, create new in Supabase
+            supabaseData.created_at = new Date().toISOString();
+            await supabase.from('inventory').insert([supabaseData]);
+        } else if (id) {
+            // This is a Supabase ID, update existing
+            await supabase.from('inventory').update(supabaseData).eq('id', id);
+        } else {
+            // New item, create in Supabase
+            supabaseData.created_at = new Date().toISOString();
+            await supabase.from('inventory').insert([supabaseData]);
+        }
+    } catch (error) {
+        console.error('Supabase sync failed:', error);
+        // Don't show error to user - just log it
+    }
+}
