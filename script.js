@@ -1,3 +1,10 @@
+// Supabase Configuration
+const supabaseUrl = 'https://natpgxzxuenierdsukow.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHBneHp4dWVuaWVyZHN1a293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MDM1NTYsImV4cCI6MjA3NzM3OTU1Nn0.Oh3bQtQ9u0wBgnm-rEeuGiLkt_lPwBptVgFwd1cLpuk'; // Paste your actual key
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+// Your existing code continues below...
+
 // Enhanced Inventory Management System with Sales & Accounts Tracking
 class InventoryManager {
     constructor() {
@@ -84,7 +91,46 @@ class InventoryManager {
         });
     }
 
-    loadInventory() {
+    async loadInventory() {
+        const tbody = document.getElementById('inventoryTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">Loading inventory...</td></tr>';
+
+        try {
+            const { data: items, error } = await supabase
+                .from('inventory')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            
+            // Map Supabase columns to your app's format
+            this.items = (items || []).map(item => ({
+                id: item.id,
+                name: item.item_name,
+                sku: item.sku,
+                quantity: item.quantity,
+                costPrice: item.cost_price,
+                sellingPrice: item.selling_price,
+                description: item.description,
+                minStock: item.min_stock,
+                lastUpdated: item.updated_at || item.created_at,
+                created: item.created_at
+            }));
+
+            this.displayInventory();
+            this.updateDashboard();
+        } catch (error) {
+            console.error('Error loading inventory:', error);
+            // Fallback to local storage
+            this.items = JSON.parse(localStorage.getItem('petrosini_inventory')) || [];
+            this.displayInventory();
+            this.updateDashboard();
+        }
+    }
+
+    displayInventory() {
         const tbody = document.getElementById('inventoryTableBody');
         if (!tbody) return;
 
@@ -193,7 +239,7 @@ class InventoryManager {
         }
     }
 
-    saveItem() {
+    async saveItem() {
         const id = document.getElementById('itemId').value;
         const name = document.getElementById('itemName').value.trim();
         const sku = document.getElementById('itemSku').value.trim();
@@ -210,6 +256,49 @@ class InventoryManager {
         }
 
         const itemData = {
+            item_name: name,
+            sku: sku,
+            quantity: quantity,
+            cost_price: costPrice,
+            selling_price: sellingPrice,
+            description: description,
+            min_stock: minStock,
+            updated_at: new Date().toISOString()
+        };
+
+        try {
+            if (id) {
+                // Update existing item in Supabase
+                const { error } = await supabase
+                    .from('inventory')
+                    .update(itemData)
+                    .eq('id', id);
+                if (error) throw error;
+                this.showNotification('Item updated successfully!', 'success');
+            } else {
+                // Add new item to Supabase
+                itemData.created_at = new Date().toISOString();
+                const { data, error } = await supabase
+                    .from('inventory')
+                    .insert([itemData])
+                    .select();
+                if (error) throw error;
+                this.showNotification('Item added successfully!', 'success');
+            }
+
+            // Reload from Supabase
+            await this.loadInventory();
+            this.hideForm();
+        } catch (error) {
+            console.error('Error saving item:', error);
+            // Fallback to local storage
+            this.showNotification('Error saving to cloud. Using local storage.', 'error');
+            this.saveToLocalStorageFallback(id, name, sku, quantity, costPrice, sellingPrice, description, minStock);
+        }
+    }
+
+    saveToLocalStorageFallback(id, name, sku, quantity, costPrice, sellingPrice, description, minStock) {
+        const itemData = {
             id: id || this.generateId(),
             name: name,
             sku: sku,
@@ -223,21 +312,16 @@ class InventoryManager {
         };
 
         if (id) {
-            // Update existing item
             const index = this.items.findIndex(item => item.id === id);
             if (index !== -1) {
                 this.items[index] = itemData;
-                this.showNotification('Item updated successfully!', 'success');
             }
         } else {
-            // Add new item
             this.items.push(itemData);
-            this.showNotification('Item added successfully!', 'success');
         }
 
         this.saveToLocalStorage();
-        this.loadInventory();
-        this.updateDashboard();
+        this.displayInventory();
         this.hideForm();
     }
 
@@ -977,19 +1061,31 @@ class InventoryManager {
         this.showNotification(`Customer ${name} added successfully!`, 'success');
     }
 
-    deleteItem(id) {
+    async deleteItem(id) {
         if (confirm('Are you sure you want to delete this item?')) {
-            this.items = this.items.filter(item => item.id !== id);
-            this.saveToLocalStorage();
-            this.loadInventory();
-            this.updateDashboard();
-            this.showNotification('Item deleted successfully!', 'success');
+            try {
+                const { error } = await supabase
+                    .from('inventory')
+                    .delete()
+                    .eq('id', id);
+                if (error) throw error;
+                
+                await this.loadInventory();
+                this.showNotification('Item deleted successfully!', 'success');
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                // Fallback to local storage
+                this.items = this.items.filter(item => item.id !== id);
+                this.saveToLocalStorage();
+                this.displayInventory();
+                this.showNotification('Item deleted from local storage!', 'success');
+            }
         }
     }
 
     filterItems(searchTerm) {
         if (!searchTerm) {
-            this.loadInventory();
+            this.displayInventory();
             return;
         }
 
@@ -1143,4 +1239,5 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
 });
