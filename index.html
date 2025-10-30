@@ -3,250 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Petrosini Global - Inventory Management</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Petrosini Stocks</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .item { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .loading { color: #666; font-style: italic; }
+        button { background: #007cba; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px; cursor: pointer; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 3px; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="header-content">
-                <div class="header-title">
-                    <h1><i class="fas fa-warehouse"></i> Petrosini Global Limited</h1>
-                    <p>Inventory & Sales Management System</p>
-                </div>
-                <div class="user-section">
-                    <div id="userInfo">
-                        <i class="fas fa-user"></i> 
-                        <span id="userName">User</span>
-                    </div>
-                    <button class="btn btn-secondary" id="logoutBtn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Navigation Tabs -->
-        <div class="tabs">
-            <button class="tab-btn active" id="inventoryTab">
-                <i class="fas fa-boxes"></i> Inventory
-            </button>
-            <button class="tab-btn" id="salesTab">
-                <i class="fas fa-chart-line"></i> Sales Report
-            </button>
-            <button class="tab-btn" id="customersTab">
-                <i class="fas fa-users"></i> Customers
-            </button>
-        </div>
-
-        <!-- Dashboard Cards -->
-        <div class="dashboard-cards">
-            <div class="card">
-                <h3>Total Items</h3>
-                <span id="totalItems">0</span>
-            </div>
-            <div class="card">
-                <h3>Stock Value</h3>
-                <span id="totalValue">₦0.00</span>
-            </div>
-            <div class="card">
-                <h3>Low Stock Items</h3>
-                <span id="lowStock">0</span>
-            </div>
-            <div class="card">
-                <h3>Accounts Receivable</h3>
-                <span id="accountsReceivable">₦0.00</span>
-            </div>
-            <div class="card">
-                <h3>Today's Sales</h3>
-                <span id="todaySales">₦0.00</span>
-            </div>
-        </div>
-
-        <!-- Inventory Tab Content -->
-        <div id="inventoryContent" class="tab-content active">
-            <div class="controls">
-                <button class="btn btn-primary" id="addItemBtn">
-                    <i class="fas fa-plus"></i> Add New Item
-                </button>
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search items...">
-                    <i class="fas fa-search"></i>
-                </div>
-            </div>
-
-            <!-- Inventory Table -->
-            <div class="inventory-table">
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>SKU</th>
-                                <th>Item Name</th>
-                                <th>Quantity</th>
-                                <th>Cost Price (₦)</th>
-                                <th>Selling Price (₦)</th>
-                                <th>Total Value (₦)</th>
-                                <th>Last Action</th>
-                                <th>Profit Margin</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventoryTableBody">
-                            <!-- Items will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sales Report Tab Content -->
-        <div id="salesContent" class="tab-content">
-            <div class="controls">
-                <button class="btn btn-primary" id="addSaleBtn">
-                    <i class="fas fa-cash-register"></i> Record New Sale
-                </button>
-                <div class="date-filter">
-                    <input type="date" id="startDate">
-                    <span>to</span>
-                    <input type="date" id="endDate">
-                    <button class="btn btn-secondary" id="filterSales">
-                        <i class="fas fa-filter"></i> Filter
-                    </button>
-                </div>
-            </div>
-
-            <div class="sales-stats">
-                <div class="stat-card">
-                    <h4>Total Sales</h4>
-                    <span id="totalSales">₦0.00</span>
-                </div>
-                <div class="stat-card">
-                    <h4>Pending Payments</h4>
-                    <span id="pendingPayments">₦0.00</span>
-                </div>
-                <div class="stat-card">
-                    <h4>Units Sold</h4>
-                    <span id="unitsSold">0</span>
-                </div>
-            </div>
-
-            <div class="inventory-table">
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Item</th>
-                                <th>Quantity</th>
-                                <th>Price (₦)</th>
-                                <th>Total (₦)</th>
-                                <th>Customer</th>
-                                <th>Payment Status</th>
-                                <th>Recorded By</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="salesTableBody">
-                            <!-- Sales transactions will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Customers Tab Content -->
-        <div id="customersContent" class="tab-content">
-            <div class="controls">
-                <button class="btn btn-primary" id="addCustomerBtn">
-                    <i class="fas fa-user-plus"></i> Add Customer
-                </button>
-                <div class="search-box">
-                    <input type="text" id="customerSearch" placeholder="Search customers...">
-                    <i class="fas fa-search"></i>
-                </div>
-            </div>
-
-            <div class="inventory-table">
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Customer Name</th>
-                                <th>Phone Number</th>
-                                <th>Total Purchases (₦)</th>
-                                <th>Credit Balance (₦)</th>
-                                <th>Last Purchase</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="customersTableBody">
-                            <!-- Customers will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add/Edit Item Form -->
-        <div id="itemForm" class="form-modal">
-            <div class="form-content">
-                <h3 id="formTitle">Add New Item</h3>
-                <form id="inventoryForm">
-                    <input type="hidden" id="itemId">
-                    
-                    <div class="form-group">
-                        <label for="itemName">Item Name *</label>
-                        <input type="text" id="itemName" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="itemSku">SKU/Code *</label>
-                        <input type="text" id="itemSku" required>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="quantity">Quantity *</label>
-                            <input type="number" id="quantity" required min="0">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="costPrice">Cost Price (₦) *</label>
-                            <input type="number" id="costPrice" step="0.01" required min="0">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="sellingPrice">Selling Price (₦) *</label>
-                            <input type="number" id="sellingPrice" step="0.01" required min="0">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="minStock">Minimum Stock Level</label>
-                        <input type="number" id="minStock" value="10" min="1">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="description">Description</label>
-                        <textarea id="description" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" id="cancelBtn">
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            Save Item
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    <h1>Petrosini Stocks</h1>
+    
+    <!-- Add New Item Form -->
+    <div>
+        <h3>Add New Item</h3>
+        <input type="text" id="itemName" placeholder="Item Name">
+        <input type="number" id="itemStock" placeholder="Stock Count" value="0">
+        <textarea id="itemDescription" placeholder="Description (optional)"></textarea>
+        <button onclick="addItem()">Add Item to Inventory</button>
     </div>
 
-    <script src="auth.js"></script>
-    <script src="script.js"></script>
+    <!-- Inventory Display -->
+    <div id="inventory">
+        <p class="loading">Loading inventory...</p>
+    </div>
+
+    <!-- Include Supabase JS library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase - REPLACE WITH YOUR ACTUAL KEYS!
+        const supabaseUrl = 'https://natpgxzxuenierdsukow.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHBneHp4dWVuaWVyZHN1a293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MDM1NTYsImV4cCI6MjA3NzM3OTU1Nn0.Oh3bQtQ9u0wBgnm-rEeuGiLkt_lPwBptVgFwd1cLpuk';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Load inventory when page loads
+        document.addEventListener('DOMContentLoaded', loadInventory);
+
+        // Load all inventory items
+        async function loadInventory() {
+            const inventoryDiv = document.getElementById('inventory');
+            inventoryDiv.innerHTML = '<p class="loading">Loading inventory...</p>';
+
+            try {
+                const { data: items, error } = await supabase
+                    .from('inventory')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (items.length === 0) {
+                    inventoryDiv.innerHTML = '<p>No items in inventory. Add some above!</p>';
+                    return;
+                }
+
+                // Display each item
+                inventoryDiv.innerHTML = '<h3>Current Inventory</h3>';
+                items.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'item';
+                    itemElement.innerHTML = `
+                        <h4>${item.item_name}</h4>
+                        <p><strong>Stock:</strong> ${item.stock_count}</p>
+                        ${item.description ? `<p>${item.description}</p>` : ''}
+                        <button onclick="updateStock(${item.id}, ${item.stock_count + 1})">+1</button>
+                        <button onclick="updateStock(${item.id}, ${item.stock_count - 1})">-1</button>
+                        <button onclick="deleteItem(${item.id})" style="background: #dc3545;">Delete</button>
+                    `;
+                    inventoryDiv.appendChild(itemElement);
+                });
+            } catch (error) {
+                console.error('Error loading inventory:', error);
+                inventoryDiv.innerHTML = '<p>Error loading inventory. Check console.</p>';
+            }
+        }
+
+        // Add new item
+        async function addItem() {
+            const name = document.getElementById('itemName').value;
+            const stock = parseInt(document.getElementById('itemStock').value);
+            const description = document.getElementById('itemDescription').value;
+
+            if (!name || isNaN(stock)) {
+                alert('Please enter both item name and stock count');
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('inventory')
+                    .insert([{ 
+                        item_name: name, 
+                        stock_count: stock, 
+                        description: description 
+                    }]);
+
+                if (error) throw error;
+
+                // Clear form and refresh inventory
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemStock').value = '0';
+                document.getElementById('itemDescription').value = '';
+                
+                loadInventory();
+            } catch (error) {
+                console.error('Error adding item:', error);
+                alert('Error adding item. Check console.');
+            }
+        }
+
+        // Update stock count
+        async function updateStock(itemId, newStock) {
+            if (newStock < 0) {
+                if (!confirm('Stock will go below zero. Continue?')) return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('inventory')
+                    .update({ stock_count: newStock })
+                    .eq('id', itemId);
+
+                if (error) throw error;
+                
+                loadInventory();
+            } catch (error) {
+                console.error('Error updating stock:', error);
+                alert('Error updating stock.');
+            }
+        }
+
+        // Delete item
+        async function deleteItem(itemId) {
+            if (!confirm('Are you sure you want to delete this item?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('inventory')
+                    .delete()
+                    .eq('id', itemId);
+
+                if (error) throw error;
+                
+                loadInventory();
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                alert('Error deleting item.');
+            }
+        }
+    </script>
 </body>
 </html>
