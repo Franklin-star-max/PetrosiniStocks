@@ -1,10 +1,3 @@
-// Supabase Configuration
-const supabaseUrl = 'https://natpgxzxuenierdsukow.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHBneHp4dWVuaWVyZHN1a293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MDM1NTYsImV4cCI6MjA3NzM3OTU1Nn0.Oh3bQtQ9u0wBgnm-rEeuGiLkt_lPwBptVgFwd1cLpuk'; // Paste your actual key
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-// Your existing code continues below...
-
 // Enhanced Inventory Management System with Sales & Accounts Tracking
 class InventoryManager {
     constructor() {
@@ -1150,5 +1143,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-
 });
