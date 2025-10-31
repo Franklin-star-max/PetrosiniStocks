@@ -1,8 +1,3 @@
-// Supabase Configuration - ADD THIS AT THE TOP
-const supabaseUrl = 'https://natpgxzxuenierdsukow.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHBneHp4dWVuaWVyZHN1a293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MDM1NTYsImV4cCI6MjA3NzM3OTU1Nn0.Oh3bQtQ9u0wBgnm-rEeuGiLkt_lPwBptVgFwd1cLpuk';
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
 // Enhanced Inventory Management System with Sales & Accounts Tracking
 class InventoryManager {
     constructor() {
@@ -14,7 +9,7 @@ class InventoryManager {
     }
 
     init() {
-        this.syncWithSupabase(); // ADDED THIS LINE
+        this.loadInventory();
         this.setupEventListeners();
         this.updateDashboard();
         this.setupTabs();
@@ -23,35 +18,6 @@ class InventoryManager {
         const currentUser = auth.getCurrentUser();
         if (currentUser && document.getElementById('userName')) {
             document.getElementById('userName').textContent = currentUser.name;
-        }
-    }
-
-    // ADD THIS FUNCTION
-    async syncWithSupabase() {
-        try {
-            const { data: items, error } = await supabase
-                .from('inventory')
-                .select('*');
-
-            if (!error && items && items.length > 0) {
-                this.items = items.map(item => ({
-                    id: item.id,
-                    name: item.item_name,
-                    sku: item.sku,
-                    quantity: item.quantity,
-                    costPrice: item.cost_price,
-                    sellingPrice: item.selling_price,
-                    description: item.description,
-                    minStock: item.min_stock,
-                    lastUpdated: item.updated_at,
-                    created: item.created_at
-                }));
-                this.saveToLocalStorage();
-            }
-            this.loadInventory();
-        } catch (error) {
-            console.log('Supabase load failed - using local storage');
-            this.loadInventory();
         }
     }
 
@@ -227,7 +193,7 @@ class InventoryManager {
         }
     }
 
-    async saveItem() { // CHANGED to async
+    saveItem() {
         const id = document.getElementById('itemId').value;
         const name = document.getElementById('itemName').value.trim();
         const sku = document.getElementById('itemSku').value.trim();
@@ -272,33 +238,6 @@ class InventoryManager {
         this.saveToLocalStorage();
         this.loadInventory();
         this.updateDashboard();
-        
-        // ADDED SUPABASE SYNC
-        try {
-            const supabaseData = {
-                item_name: name,
-                sku: sku,
-                quantity: quantity,
-                cost_price: costPrice,
-                selling_price: sellingPrice,
-                description: description,
-                min_stock: minStock,
-                updated_at: new Date().toISOString()
-            };
-
-            if (id && id.startsWith('id_')) {
-                supabaseData.created_at = new Date().toISOString();
-                await supabase.from('inventory').insert([supabaseData]);
-            } else if (id) {
-                await supabase.from('inventory').update(supabaseData).eq('id', id);
-            } else {
-                supabaseData.created_at = new Date().toISOString();
-                await supabase.from('inventory').insert([supabaseData]);
-            }
-        } catch (error) {
-            console.error('Supabase sync failed:', error);
-        }
-        
         this.hideForm();
     }
 
